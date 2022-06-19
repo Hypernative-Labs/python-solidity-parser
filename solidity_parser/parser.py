@@ -936,7 +936,11 @@ class AstVisitor(SolidityVisitor):
         if names.identifier():
             names = [self.visit(names.identifier())]
         else:
-            names = self.visit(names.assemblyIdentifierList().identifier())
+            names = names.assemblyIdentifierList()
+            if names:
+                names = self.visit(names.identifier())
+            else:
+                name = []
 
         return Node(ctx=ctx,
                     type='AssemblyAssignment',
