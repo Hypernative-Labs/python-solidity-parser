@@ -8,7 +8,6 @@ if sys.version_info[1] > 5:
 else:
 	from typing.io import TextIO
 
-
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\u0087")
@@ -925,14 +924,32 @@ class SolidityParser ( Parser ):
     COMMENT=132
     LINE_COMMENT=133
 
-    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+    class loggerListener(DiagnosticErrorListener):
+        def __init__(self, logger=None):
+            self.logger = logger
+        def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+            if self.logger != None:
+                self.logger.debug(f"error from solidity parser: {msg}")
+
+        def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
+            pass
+
+        def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
+            pass
+
+        def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
+            pass
+
+    def __init__(self, input:TokenStream, output:TextIO = sys.stdout, logger=None):
+        logger_listener = self.loggerListener(logger)
+        input.tokenSource.removeErrorListeners()
+        input.tokenSource.addErrorListener(logger_listener)
         super().__init__(input, output)
         self.checkVersion("4.9.3")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
-
-
-
+        self.removeErrorListeners()
+        self.addErrorListener(logger_listener)
 
     class SourceUnitContext(ParserRuleContext):
         __slots__ = 'parser'
