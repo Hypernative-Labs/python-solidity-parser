@@ -8,6 +8,9 @@ if sys.version_info[1] > 5:
 else:
 	from typing.io import TextIO
 
+def log_msg(msg:str, logger):
+    if logger != None:
+        logger.debug(f"error from solidity parser: {msg}")
 
 def serializedATN():
     with StringIO() as buf:
@@ -925,14 +928,25 @@ class SolidityParser ( Parser ):
     COMMENT=132
     LINE_COMMENT=133
 
-    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+    class loggerListener(DiagnosticErrorListener):
+        def __init__(self, logger=None):
+            super().__init__()
+            self.logger = logger
+        def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+            log_msg(msg, self.logger)
+
+    def __init__(self, input:TokenStream, output:TextIO = sys.stdout, logger=None):
+        input.tokenSource.removeErrorListeners()
+        input.tokenSource.addErrorListener(self.loggerListener(logger))
         super().__init__(input, output)
         self.checkVersion("4.9.3")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
+        self.logger = logger
 
 
-
+    def notifyErrorListeners(self, msg:str, offendingToken:Token = None, e:RecognitionException = None):
+        log_msg(msg, self.logger)
 
     class SourceUnitContext(ParserRuleContext):
         __slots__ = 'parser'

@@ -1026,7 +1026,7 @@ class AstVisitor(SolidityVisitor):
         return ctx.getText()
 
 
-def parse(text, start="sourceUnit", loc=False, strict=False):
+def parse(text, start="sourceUnit", loc=False, strict=False, logger=None):
     from antlr4.InputStream import InputStream
     from antlr4 import FileStream, CommonTokenStream
 
@@ -1034,7 +1034,7 @@ def parse(text, start="sourceUnit", loc=False, strict=False):
 
     lexer = SolidityLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
-    parser = SolidityParser(token_stream)
+    parser = SolidityParser(token_stream, logger=logger)
     ast = AstVisitor()
 
     Node.ENABLE_LOC = loc
